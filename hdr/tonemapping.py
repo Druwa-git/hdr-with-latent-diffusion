@@ -1,10 +1,11 @@
 import os
 from os.path import join as ospj
 import numpy as np
-import data_io as io
 import cv2
-import metrics as m
 import argparse
+
+from hdr import metrics as m
+from hdr import data_io as io
 
 _IMAGE_TYPE = ('gt', 'long', 'medium', 'short', 'result')
 
@@ -15,6 +16,33 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
+def tonemap_func(file_name, pred_path, log_path):
+    """
+
+    Args:
+        file_name: ex) "train/0995"
+        pred_path: ex) "logs/11-11-11/0995_medium.png
+        log_path: ex) "logs/11-11-11/"
+
+    Returns:
+
+    """
+    dataset_path = ospj('../dataset/ntire_hdr/')
+    target_number = file_name.split('/')[-1]
+    target_path = ospj(dataset_path, file_name + "_gt.png")
+    align_path = ospj(dataset_path, 'alignratio', '{}_alignratio.npy'.format(target_number))
+    hdr_image = io.imread_uint16_png(target_path, align_path)
+    hdr_linear_image = hdr_image ** 2.24
+    norm_perc = np.percentile(hdr_linear_image, 99).copy()
+
+    hdr_image = io.imread_uint16_png(pred_path, align_path)
+    hdr_linear_image = hdr_image ** 2.24
+
+    hdr_image = (m.tanh_norm_mu_tonemap(hdr_linear_image, norm_perc) * 255.).round().astype(np.uint8)
+    cv2.imwrite(ospj(log_path, "{}_tone_mapped.png".format(target_number)),
+                cv2.cvtColor(hdr_image, cv2.COLOR_RGB2BGR))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

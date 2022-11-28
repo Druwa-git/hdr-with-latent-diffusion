@@ -60,7 +60,7 @@ class NTIREHDRBase(Dataset):
         image = Image.fromarray(img)
         gt_image = Image.fromarray(gt_img)
         if self.size is not None:
-            image = image.resize((self.size, self.size), resample=self.interpolation)
+            image = image.resize((round(self.size / 4), round(self.size / 4)), resample=self.interpolation)
             gt_image = gt_image.resize((self.size, self.size), resample=self.interpolation)
 
         image = np.array(image).astype(np.uint8)
